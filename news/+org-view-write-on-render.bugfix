@@ -1,0 +1,8 @@
+Fix the organization view writing the post memberships onto the post
+content object while rendering, which made plone.protect treat the page
+view as an unsafe write and redirect to the confirm-action page. The
+memberships are now resolved in the view (post_members) instead.
+
+Adds functional view tests that render the default view of every
+politikus.popolo content type, and installs politikus.bods in the test
+layer so the views are tested as on a real site.

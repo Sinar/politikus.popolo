@@ -127,5 +127,85 @@ class ViewsFunctionalTest(unittest.TestCase):
     layer = POLITIKUS_POPOLO_FUNCTIONAL_TESTING
 
     def setUp(self):
+        from plone.app.testing import TEST_USER_NAME
+        from plone.app.testing import TEST_USER_PASSWORD
+        from plone.testing.zope import Browser
+        import datetime
+        import transaction
+        app = self.layer['app']
         self.portal = self.layer['portal']
         setRoles(self.portal, TEST_USER_ID, ['Manager'])
+        self.browser = Browser(app)
+        self.browser.handleErrors = False
+        self.browser.addHeader(
+            'Authorization',
+            'Basic {0}:{1}'.format(
+                TEST_USER_NAME, TEST_USER_PASSWORD),
+        )
+        self.john = api.content.create(
+            self.portal, 'Person', 'john',
+            name=u'John Doe',
+            gender=u'male',
+            birth_date=datetime.date(1950, 5, 4),
+            death_date=datetime.date(2020, 5, 4),
+        )
+        self.jane = api.content.create(
+            self.portal, 'Person', 'jane',
+            name=u'Jane Doe')
+        self.organization = api.content.create(
+            self.portal, 'Organization', 'acme',
+            name=u'Acme Corporation')
+        self.post = api.content.create(
+            self.organization, 'Post', 'chairman',
+            label=u'Chairman',
+            role=u'Chairman',
+            organization=relation_to(self.organization),
+        )
+        self.membership = api.content.create(
+            self.organization, 'Membership', 'chairman-membership',
+            label=u'Chairman of Acme',
+            role=u'Chairman',
+            person=relation_to(self.john),
+            organization=relation_to(self.organization),
+            post=relation_to(self.post),
+            start_date=datetime.date(2000, 1, 1),
+        )
+        self.relationship = api.content.create(
+            self.john, 'Relationship', 'spouse',
+            name=u'Spouse of Jane Doe',
+            relationship_type=u'spouse',
+            relationship_subject=relation_to(self.john),
+            relationship_object=relation_to(self.jane),
+        )
+        transaction.commit()
+
+    def test_person_fti_registers_nationalities_behavior(self):
+        """The politikus.bods nationalities behavior must be enabled
+        on the Person type, or the nationalities data of the
+        person view is unavailable."""
+        from zope.component import queryUtility
+        from plone.dexterity.interfaces import IDexterityFTI
+        fti = queryUtility(IDexterityFTI, name='Person')
+        self.assertIn(
+            'politikus.bods.nationalities',
+            fti.behaviors,
+        )
+
+    def test_person_view_renders(self):
+        self.browser.open(self.john.absolute_url())
+        html = self.browser.contents
+        self.assertIn('John Doe', html)
+        self.assertIn('Membership and Posts', html)
+        self.assertIn('Chairman of Acme', html)
+        self.assertIn('Acme Corporation', html)
+        self.assertIn('Family Relationships', html)
+        self.assertIn('Jane Doe', html)
+
+    def test_person_view_renders_nationalities(self):
+        import transaction
+        self.john.nationalities = ['KH']
+        transaction.commit()
+        self.browser.open(self.john.absolute_url())
+        html = self.browser.contents
+        self.assertIn('Nationalities', html)
+        self.assertIn('Cambodia', html)

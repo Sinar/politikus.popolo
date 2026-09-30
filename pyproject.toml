@@ -38,9 +38,11 @@ dependencies = [
 
 [project.optional-dependencies]
 test = [
+    "collective.vocabularies.iso",
     "plone.app.contenttypes",
     "plone.app.robotframework[debug]",
     "plone.app.testing",
+    "politikus.bods",
     "zope.testrunner",
 ]
 release = [

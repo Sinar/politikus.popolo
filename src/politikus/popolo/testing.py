@@ -20,12 +20,18 @@ class PolitikusPopoloLayer(PloneSandboxLayer):
         # layer.
         import collective.vocabularies.iso
         import plone.restapi
+        import politikus.bods
         self.loadZCML(package=collective.vocabularies.iso)
         self.loadZCML(package=plone.restapi)
         self.loadZCML(package=politikus.popolo)
+        self.loadZCML(package=politikus.bods)
 
     def setUpPloneSite(self, portal):
         applyProfile(portal, 'politikus.popolo:default')
+        # The site add-on installs politikus.bods on top of
+        # politikus.popolo, and the popolo views depend on the
+        # bods behaviors, so install it as well.
+        applyProfile(portal, 'politikus.bods:default')
 
 
 POLITIKUS_POPOLO_FIXTURE = PolitikusPopoloLayer()
