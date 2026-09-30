@@ -95,19 +95,31 @@ class OrganizationView(DefaultView, BrowserView):
             if obj is not None and checkPermission('zope2.View', obj):
                 if obj.portal_type == 'Post':
 
-                    obj.members = []
-
-                    for membership in catalog.findRelations(
-                        dict(to_id=intids.getId(aq_inner(obj)),)
-                          ):
-                        member = intids.queryObject(membership.from_id)
-                        # check for person
-                        if member.person:
-                            obj.members.append(member)
-
                     result.append(obj)
 
         return result
+
+    def post_members(self, post):
+        """
+        Return the memberships known to hold the given post, without
+        writing them onto the post object while the view renders.
+        """
+        catalog = getUtility(ICatalog)
+        intids = getUtility(IIntIds)
+
+        members = []
+
+        for rel in catalog.findRelations(
+            dict(to_id=intids.getId(aq_inner(post)),)
+              ):
+            member = intids.queryObject(rel.from_id)
+            if member is None:
+                continue
+            # check for person
+            if member.person:
+                members.append(member)
+
+        return members
 
     def relationships_subject(self):
         # Get relationships where person or organization is the subject

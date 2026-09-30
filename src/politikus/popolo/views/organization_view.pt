@@ -81,7 +81,7 @@
             tal:repeat="post view/posts">
             <dt><a tal:content="post/title"
                    tal:attributes="href post/absolute_url"></a></dt>
-            <dd tal:repeat="member post/members">
+            <dd tal:repeat="member python:view.post_members(post)">
                 <a tal:content="member/person/to_object/title"
                    tal:attributes="href
                    member/person/to_object/absolute_url"></a> &mdash;
